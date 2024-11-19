@@ -1,2 +1,12 @@
 venv/
 backend/venv/
+
+.DS_Store
+
+backend/.DS_Store
+backend/id_checker/.DS_Store
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
