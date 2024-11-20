@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view
 from .models import IDRecord, PublicHoliday
 from .serializers import IDRecordSerializer, PublicHolidaySerializer
 
-
 @api_view(['POST'])
 def id_search(request):
     id_number = request.data.get('idNumber')

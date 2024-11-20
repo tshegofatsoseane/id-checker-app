@@ -8,7 +8,7 @@ class IDRecord(models.Model):
     query_count = models.PositiveIntegerField(default=1)
 
 class PublicHoliday(models.Model):
-    id_record = models.ForeignKey(IDRecord, on_delete=models.CASCADE, related_name='golidays')
+    id_record = models.ForeignKey(IDRecord, on_delete=models.CASCADE, related_name='holidays')
     holiday_name = models.CharField(max_length=255)
     description = models.TextField()
     holiday_date = models.DateField()
