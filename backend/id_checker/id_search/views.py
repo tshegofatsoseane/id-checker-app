@@ -5,10 +5,10 @@ from rest_framework.decorators import api_view
 from datetime import datetime
 from .models import IDRecord, PublicHoliday
 from .serializers import IDRecordSerializer, PublicHolidaySerializer
+from django.conf import settings
 
-# Luhn algorithm
 def validator(id_number):
-    """validate id number using luhn algorithm"""
+    """validate id no. using luhn algorithm"""
     total = 0
     reverse_digits = id_number[::-1]
     for i, digit in enumerate(reverse_digits):
@@ -21,7 +21,7 @@ def validator(id_number):
     return total % 10 == 0
 
 def decoder(id_number):
-    """Decode ID number and return its parts"""
+    """decode id no.and return its parts/components"""
     if len(id_number) != 13 or not id_number.isdigit():
         raise ValueError("Invalid ID number format")
 
@@ -75,7 +75,7 @@ def search_id(request):
 
         # fetch holidays using API
         response = requests.get('https://calendarific.com/api/v2/holidays', params={
-            'api_key': 'AdaT3t4fsQjgafmF7pNB7sItlvTaDVU3',
+            'api_key': settings.CALENDARIFIC_API_KEY,
             'country': 'ZA',
             'year': record.date_of_birth.year,
         })
