@@ -7,6 +7,7 @@ class IDRecord(models.Model):
     sa_citizen = models.BooleanField(default=True)
     search_count = models.PositiveIntegerField(default=1)
 
+
 class PublicHoliday(models.Model):
     id_record = models.ForeignKey(IDRecord, on_delete=models.CASCADE, related_name='holidays')
     holiday_name = models.CharField(max_length=255)
