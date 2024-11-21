@@ -3,6 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from datetime import datetime
+from .models import IDRecord, PublicHoliday
+from .serializers import IDRecordSerializer, PublicHolidaySerializer
 
 # Luhn algorithm
 def validator(id_number):
@@ -19,15 +21,14 @@ def validator(id_number):
     return total % 10 == 0
 
 def decoder(id_number):
-    """decode iD number and return it's parts/components"""
+    """Decode ID number and return its parts"""
     if len(id_number) != 13 or not id_number.isdigit():
         raise ValueError("Invalid ID number format")
 
-     # extract parts/components from the id no.
+    # extract parts/components from the id no.
     birth_str = id_number[:6] 
     gender_code = int(id_number[6:10])  
     citizenship = int(id_number[10]) 
-    checksum = int(id_number[12])
 
     if not validator(id_number):
         raise ValueError("Invalid ID number checksum")
@@ -39,7 +40,7 @@ def decoder(id_number):
     else:
         gender = "Female"
 
-
+     
     if citizenship == 0:
         citizen = True
     else:
@@ -51,50 +52,63 @@ def decoder(id_number):
         'sa_citizen': citizen
     }
 
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 def search_id(request):
-        
-        id_no = request.data.get('idNumber')
 
-        if len(id_no) != 13:
+    id_no = request.data.get('idNumber')
+
+    if len(id_no) != 13:
             return Response({'error': 'Invalid ID number'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        decoded_info = decoder(id_no)
 
-        try:
-            # decode id number
-            decoded_info = decoder(id_no)
+         # check if id exists in database or create new record
+        record, created = IDRecord.objects.get_or_create(
+            id_number=id_no,
+            defaults=decoded_info
+        )
 
-            # fetch holidays using calendarific API
-            response = requests.get('https://calendarific.com/api/v2/holidays', params={
-                'api_key': 'AdaT3t4fsQjgafmF7pNB7sItlvTaDVU3',
-                'country': 'ZA',
-                'year': decoded_info['date_of_birth'].year,
+        if not created:
+            record.search_count += 1
+            record.save()
+
+        # fetch holidays using calendarific API
+        response = requests.get('https://calendarific.com/api/v2/holidays', params={
+            'api_key': 'AdaT3t4fsQjgafmF7pNB7sItlvTaDVU3',
+            'country': 'ZA',
+            'year': record.date_of_birth.year,
+        })
+
+        if response.status_code != 200:
+            raise ValueError(f"Failed to fetch holidays: {response.status_code}")
+            
+        holidays = response.json().get('response', {}).get('holidays', [])
+        matching_holidays = [
+             holiday for holiday in holidays if holiday['date']['iso'] == str(record.date_of_birth)
+        ]
+
+        # store holidays in the database
+        for holiday in matching_holidays:
+            PublicHoliday.objects.create(
+                id_record=record,
+                holiday_name=holiday['name'],
+                description=holiday.get('description', ''),
+                holiday_date=holiday['date']['iso'],
+                holiday_type=holiday.get('type', ['General'])[0],
+            )
+
+        # return result 
+        return Response({
+            'idNumber': record.id_number,
+            'dateOfBirth': record.date_of_birth,
+            'gender': record.gender,
+            'saCitizen': record.sa_citizen,
+            'searchCount': record.search_count,
+            'holidays': PublicHolidaySerializer(record.holidays.all(), many=True).data
             })
 
-            if response.status_code != 200:
-                raise ValueError(f"Failed to fetch holidays: {response.status_code}")
-
-            holidays = response.json().get('response', {}).get('holidays', [])
-
-            matching_holidays = [
-                {
-                    'holidayName': holiday['name'],
-                    'description': holiday.get('description', ''),
-                    'holidayDate': holiday['date']['iso'],
-                    'holidayType': holiday['type'][0] if 'type' in holiday else 'General',
-                }
-                for holiday in holidays if holiday['date']['iso'] == str(decoded_info['date_of_birth'])
-            ]
-
-            # return results
-            return Response({
-                'idNumber': id_no,
-                'dateOfBirth': decoded_info['date_of_birth'],
-                'gender': decoded_info['gender'],
-                'saCitizen': decoded_info['sa_citizen'],
-                'holidays': matching_holidays
-            })
-
-        except ValueError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except ValueError as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

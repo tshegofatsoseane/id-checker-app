@@ -9,4 +9,4 @@ class IDRecordSerializer(serializers.ModelSerializer):
 class PublicHolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = PublicHoliday
-        fieleds = ['id_record', 'holiday_name', 'description', 'holiday_date', 'holiday_type']
+        fields = ['holiday_name', 'description', 'holiday_date', 'holiday_type']
