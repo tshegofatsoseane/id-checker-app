@@ -4,7 +4,7 @@ from .models import IDRecord, PublicHoliday
 class IDRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = IDRecord
-        fields = ['id_number', 'gender', 'date_of_birth', 'sa_citizen', 'query_count']
+        fields = ['id_number', 'gender', 'date_of_birth', 'sa_citizen', 'search_count']
 
 class PublicHolidaySerializer(serializers.ModelSerializer):
     class Meta:

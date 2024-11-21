@@ -31,7 +31,7 @@ def decode_id_number(id_number):
     # extract parts/components from the id no.
     birth_str = id_number[:6] 
     gender_code = int(id_number[6:10])  
-    citizenship_code = int(id_number[10]) 
+    citizenship = int(id_number[10]) 
     checksum = int(id_number[12])
 
     if not luhn_validator(id_number):
@@ -45,23 +45,36 @@ def decode_id_number(id_number):
         gender = "Female"
 
      
-    if citizenship_code == 0:
-        sa_citizen = True
+    if citizenship == 0:
+        citizen = True
     else:
-        sa_citizen = False
+        citizen = False
 
     return {
         'date_of_birth': birth_date,
         'gender': gender,
-        'sa_citizen': sa_citizen
+        'sa_citizen': citizen
     }
 
 
 @api_view(['POST'])
 def id_search(request):
-    id_number = request.data.get('idNumber')
+    id_no = request.data.get('idNumber')
 
-    if len(id_number) != 13:
+    if len(id_no) != 13:
         return Response({'error': 'Invalid Id number'}, status=status.HTTP_400_BAD_REQUEST)
     
+    try:
+        decoded_info = decode_id_number(id_no)
+
+        # check if id exist in database if not create new record
+        record, created = IDRecord.objects.get_or_create(
+            id_number=id_no,
+            defaults=decoded_info
+        )
+
+        if not created:
+            record.query_count += 1
+            record.save()
+    except:
 
