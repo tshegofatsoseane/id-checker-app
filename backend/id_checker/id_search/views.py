@@ -6,6 +6,7 @@ from datetime import datetime
 from .models import IDRecord, PublicHoliday
 from .serializers import IDRecordSerializer, PublicHolidaySerializer
 from django.conf import settings
+from id_search.utils.pagination import HolidayPagination
 
 def validator(id_number):
     """validate id no. using luhn algorithm"""
@@ -98,15 +99,18 @@ def search_id(request):
                 holiday_type=holiday.get('type', ['General'])[0],
             )
 
+        paginator = HolidayPagination()
+        paginated_holidays = paginator.paginate_queryset(record.holidays.all(), request)
+
         # return result 
-        return Response({
+        return paginator.get_paginated_response({
             'idNumber': record.id_number,
             'dateOfBirth': record.date_of_birth,
             'gender': record.gender,
             'saCitizen': record.sa_citizen,
             'searchCount': record.search_count,
-            'holidays': PublicHolidaySerializer(record.holidays.all(), many=True).data
-            })
+            'holidays': PublicHolidaySerializer(paginated_holidays, many=True).data
+        })
 
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

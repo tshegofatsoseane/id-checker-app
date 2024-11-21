@@ -112,4 +112,12 @@ export default {
   font-style: italic;
 }
 
+.holiday-description {
+    white-space: pre-wrap;
+    word-wrap: break-word; 
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
 </style>
+
