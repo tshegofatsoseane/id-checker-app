@@ -63,7 +63,7 @@ def search_id(request):
     try:
         decoded_info = decoder(id_no)
 
-         # check if id exists in database or create new record
+         # check if id exists in database and create new record
         record, created = IDRecord.objects.get_or_create(
             id_number=id_no,
             defaults=decoded_info
@@ -73,7 +73,7 @@ def search_id(request):
             record.search_count += 1
             record.save()
 
-        # fetch holidays using calendarific API
+        # fetch holidays using API
         response = requests.get('https://calendarific.com/api/v2/holidays', params={
             'api_key': 'AdaT3t4fsQjgafmF7pNB7sItlvTaDVU3',
             'country': 'ZA',
@@ -88,7 +88,7 @@ def search_id(request):
              holiday for holiday in holidays if holiday['date']['iso'] == str(record.date_of_birth)
         ]
 
-        # store holidays in the database
+        # store holidays in database
         for holiday in matching_holidays:
             PublicHoliday.objects.create(
                 id_record=record,

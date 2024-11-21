@@ -13,10 +13,10 @@ class IDRecord(models.Model):
 
 class PublicHoliday(models.Model):
     id_record = models.ForeignKey(IDRecord, on_delete=models.CASCADE, related_name='holidays')
-    holiday_name = models.CharField(max_length=255)
+    holiday_name = models.CharField(max_length=250)
     description = models.TextField()
     holiday_date = models.DateField()
-    holiday_type = models.CharField(max_length=50)
+    holiday_type = models.CharField(max_length=70)
 
     def __str__(self):
         return self.holiday_name
