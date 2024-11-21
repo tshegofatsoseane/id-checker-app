@@ -1,139 +1,125 @@
 <template>
-    <v-container class="pa-5">
-      <v-card class="pa-5">
-        <v-card-title class="text-h5 font-weight-bold">SA ID Checker</v-card-title>
+<v-container class="pa-5">
+  <v-card class="pa-5">
+    <v-card-title class="text-h5 font-weight-bold">SA ID Checker</v-card-title>
+    <v-card-text>
+      <v-text-field
+        label="Enter South African ID Number"
+        v-model="idNumber"
+        outlined
+        :rules="[validateID]"
+        @input="error = ''"
+      />
+      <v-btn :disabled="!isValidID" color="primary" @click="searchID">
+        Search
+      </v-btn>
+      <v-alert v-if="error" type="error" class="mt-3">{{ error }}</v-alert>
+
+       <!-- search results card -->
+      <v-card v-if="result" outlined class="mt-5">
+        <v-card-title class="font-weight-bold text-h6">Search Results</v-card-title>
         <v-card-text>
-          <v-text-field
-            label="Enter South African ID Number"
-            v-model="idNumber"
-            outlined
-            :rules="[validateID]"
-            @input="error = ''"
-          />
-          <v-btn :disabled="!isValidID" color="primary" @click="searchID">
-            Search
-          </v-btn>
-          <v-alert v-if="error" type="error" class="mt-3">{{ error }}</v-alert>
-  
-          <!-- search results card -->
-          <v-card v-if="result" outlined class="mt-5">
-            <v-card-title class="font-weight-bold text-h6">Search Results</v-card-title>
-            <v-card-text>
-              <v-row>
-                <v-col cols="12" sm="6">
-                  <p><strong>Date of Birth:</strong> {{ result.dateOfBirth }}</p>
-                  <p><strong>Gender:</strong> {{ result.gender }}</p>
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <p><strong>SA Citizen:</strong> {{ result.saCitizen ? "Yes" : "No" }}</p>
-                  <p><strong>Search Count:</strong> {{ result.searchCount }}</p>
-                </v-col>
-              </v-row>
-              <v-divider class="my-4"></v-divider> 
-              <h4 class="text-h6 font-weight-bold">Holidays:</h4>
-  
-              <!-- displaying holidays list -->
-              <v-list dense>
-                <v-list-item v-for="holiday in result.holidays" :key="holiday.holiday_name">
-                  <v-list-item-content>
-                    <v-list-item-title><strong>{{ holiday.holiday_name }}</strong></v-list-item-title>
-                    <v-list-item-subtitle><strong>Date:</strong> {{ holiday.holiday_date }}</v-list-item-subtitle>
-                    <v-list-item-subtitle><strong>Type:</strong> {{ holiday.holiday_type }}</v-list-item-subtitle>
-                    <v-list-item-subtitle class="holiday-description"><strong>Description:</strong> {{ holiday.description }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
-  
-              <!-- pagination buttons -->
-              <v-row justify="center" class="mt-4">
-                <v-btn :disabled="!holidays.previous" @click="fetchHolidays(holidays.previous)">
-                  Previous
-                </v-btn>
-                <v-btn :disabled="!holidays.next" @click="fetchHolidays(holidays.next)">
-                  Next
-                </v-btn>
-              </v-row>
-            </v-card-text>
-          </v-card>
+          <v-row>
+            <v-col cols="12" sm="6">
+              <p><strong>Date of Birth:</strong> {{ result.date_of_birth }}</p>
+              <p><strong>Gender:</strong> {{ result.gender }}</p>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <p><strong>SA Citizen:</strong> {{ result.saCitizen ? "Yes" : "No" }}</p>
+              <p><strong>Search Count:</strong> {{ result.searchCount }}</p>
+            </v-col>
+          </v-row>
+          <v-divider class="my-4"></v-divider> 
+          <h4 class="text-h6 font-weight-bold">Holidays:</h4>
+          <!-- scrollable div for holidays -->
+          <div class="holiday-list-container" @scroll="onScroll">
+
+             <!-- displaying holidays list -->
+            <v-list dense>
+              <v-list-item
+                v-for="(holiday) in visibleHolidays"
+                :key="holiday.holiday_name"
+              >
+                <v-list-item-content>
+                  <v-list-item-title>
+                    <strong>{{ holiday.holiday_name }}</strong>
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    <strong>Date:</strong> {{ holiday.holiday_date }}
+                  </v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    <strong>Type:</strong> {{ holiday.holiday_type }}
+                  </v-list-item-subtitle>
+                  <v-list-item-subtitle class="holiday-description">
+                    <strong>Description:</strong> {{ holiday.description }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </div>
         </v-card-text>
       </v-card>
-    </v-container>
-  </template>
-  
-  
+    </v-card-text>
+  </v-card>
+</v-container>
+</template>
 
-  <script>
-  import axios from "axios";
-  
-  export default {
-    data() {
-      return {
-        idNumber: "",
-        result: null,
-        error: "",
-        holidays: {
-          results: [],
-          next: null,
-          previous: null,
-        },
-      };
+<script>
+import axios from "axios";
+export default {
+  data() {
+    return {
+      idNumber: "",
+      result: null,
+      error: "",
+      visibleCount: 5, 
+    };
+  },
+  computed: {
+    isValidID() {
+      return this.validateID(this.idNumber) === true;
     },
-    computed: {
-      isValidID() {
-        return this.validateID(this.idNumber) === true;
-      },
+    visibleHolidays() {
+      // show the first 5 holidays for scrollable div
+      return this.result ? this.result.holidays.slice(0, this.visibleCount) : [];
     },
-    methods: {
-      validateID(id) {
-        if (id.length !== 13 || !/^\d+$/.test(id)) return "ID must be 13 digits";
-        let sum = 0;
-        for (let i = 0; i < 13; i++) {
-          let num = parseInt(id[i]);
-          if (i % 2 !== 0) {
-            num *= 2;
-            if (num > 9) num -= 9;
-          }
-          sum += num;
+  },
+  methods: {
+    validateID(id) {
+      if (id.length !== 13 || !/^\d+$/.test(id)) return "ID must be 13 digits";
+      let sum = 0;
+      for (let i = 0; i < 13; i++) {
+        let num = parseInt(id[i]);
+        if (i % 2 !== 0) {
+          num *= 2;
+          if (num > 9) num -= 9;
         }
-        return sum % 10 === 0 || "Invalid ID number";
-      },
-  
-      // Search for ID number and fetch associated data
-      async searchID() {
-        try {
-          const response = await axios.post("http://127.0.0.1:8000/api/search", {
-            idNumber: this.idNumber,
-          });
-          console.log("Search results:", response.data); 
-  
-          this.result = response.data.results; 
-          this.holidays = {
-            results: response.data.results.holidays,
-            next: response.data.next,
-            previous: response.data.previous,
-          };
-          this.error = "";
-        } catch (err) {
-          console.error("Error during search:", err);  
-          this.error = err.response?.data?.error || "An error occurred";
-        }
-      },
+        sum += num;
+      }
+      return sum % 10 === 0 || "Invalid ID number";
+    },
+    async searchID() {
+      try {
+        const response = await axios.post("http://127.0.0.1:8000/api/search", {
+          idNumber: this.idNumber,
+        });
+        console.log(response.data);
+        this.result = response.data;
+        this.error = "";
+      } catch (err) {
+        this.error = err.response?.data?.error || "An error occurred";
+      }
+    },
+    onScroll(event) {
+      const bottom = event.target.scrollHeight === event.target.scrollTop + event.target.clientHeight;
+      if (bottom && this.result.holidays.length > this.visibleCount) {
+        this.visibleCount += 5;
+      }
+    },
+  },
+};
 
-      async fetchHolidays(url) {
-        if (!url) return; 
-        try {
-          const response = await axios.post(url);
-          console.log("Fetched holidays:", response.data);  
-          this.holidays = response.data;
-        } catch (err) {
-          console.error("Error fetching holidays:", err);  
-          this.error = err.response?.data?.error || "An error occurred while fetching holidays";
-        }
-      },
-    },
-  };
-  </script>
-  
+</script>
 
 <style scoped>
 .v-list-item-title {
@@ -144,11 +130,15 @@
 }
 
 .holiday-description {
-    white-space: pre-wrap;
-    word-wrap: break-word; 
-    max-width: 100%;
-    overflow-wrap: break-word;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
+.holiday-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
 </style>
 
