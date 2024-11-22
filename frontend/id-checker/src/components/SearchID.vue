@@ -3,10 +3,9 @@
     <v-card class="pa-5 frosted-card">
       <v-card-title class="text-h5 font-weight-bold">SA ID Checker</v-card-title>
 
-        <v-card-text>
+      <v-card-text>
         <p class="description-text">
-          Enter a South Africa ID Number to check if there
-          are any important public holidays on the date of birth.
+          Enter a South African ID Number to check if there are any important public holidays on the date of birth.
         </p>
       </v-card-text>
 
@@ -22,8 +21,8 @@
           Search
         </v-btn>
         <v-alert v-if="error" type="error" class="mt-3">{{ error }}</v-alert>
-  
-         <!-- search results card -->
+
+        <!-- search results card -->
         <v-card v-if="result" outlined class="mt-5 frosted-card">
           <v-card-title class="font-weight-bold text-h6">Search Results</v-card-title>
           <v-card-text>
@@ -40,10 +39,14 @@
             <v-divider class="my-4"></v-divider> 
             <h4 class="text-h6 font-weight-bold">Holidays:</h4>
 
+            <!-- If no holidays, show a message -->
+            <div v-if="!result.holidays || result.holidays.length === 0" class="no-holidays-message">
+              <p>No holidays found for the given date of birth.</p>
+            </div>
+
             <!-- scrollable div for holidays -->
-            <div class="holiday-list-container" @scroll="onScroll">
-  
-               <!-- holidays list -->
+            <div class="holiday-list-container" v-else @scroll="onScroll">
+              <!-- holidays list -->
               <v-list dense>
                 <v-list-item
                   v-for="(holiday) in visibleHolidays"
@@ -65,7 +68,6 @@
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
-
             </div>
           </v-card-text>
         </v-card>
@@ -74,95 +76,101 @@
   </v-container>
 </template>
 
-  <script>
-  import axios from "axios";
-  export default {
-    data() {
-      return {
-        idNumber: "",
-        result: null,
-        error: "",
-        visibleCount: 5, 
-      };
+<script>
+import axios from "axios";
+export default {
+  data() {
+    return {
+      idNumber: "",
+      result: null,
+      error: "",
+      visibleCount: 5, 
+    };
+  },
+  computed: {
+    isValidID() {
+      return this.validateID(this.idNumber) === true;
     },
-    computed: {
-      isValidID() {
-        return this.validateID(this.idNumber) === true;
-      },
-      visibleHolidays() {
-        // show the first 5 holidays for scrollable div
-        return this.result ? this.result.holidays.slice(0, this.visibleCount) : [];
-      },
+    visibleHolidays() {
+      return this.result ? this.result.holidays.slice(0, this.visibleCount) : [];
     },
-    methods: {
-      validateID(id) {
-        if (id.length !== 13 || !/^\d+$/.test(id)) return "ID must be 13 digits";
-        let sum = 0;
-        for (let i = 0; i < 13; i++) {
-          let num = parseInt(id[i]);
-          if (i % 2 !== 0) {
-            num *= 2;
-            if (num > 9) num -= 9;
-          }
-          sum += num;
+  },
+  methods: {
+    validateID(id) {
+      if (id.length !== 13 || !/^\d+$/.test(id)) return "ID must be 13 digits";
+      let sum = 0;
+      for (let i = 0; i < 13; i++) {
+        let num = parseInt(id[i]);
+        if (i % 2 !== 0) {
+          num *= 2;
+          if (num > 9) num -= 9;
         }
-        return sum % 10 === 0 || "Invalid ID number";
-      },
-      async searchID() {
-        try {
-          const response = await axios.post("http://127.0.0.1:8000/api/search", {
-            idNumber: this.idNumber,
-          });
-          console.log(response.data);
-          this.result = response.data;
-          this.error = "";
-        } catch (err) {
-          this.error = err.response?.data?.error || "An error occurred";
-        }
-      },
-      onScroll(event) {
-        const bottom = event.target.scrollHeight === event.target.scrollTop + event.target.clientHeight;
-        if (bottom && this.result.holidays.length > this.visibleCount) {
-          this.visibleCount += 5;
-        }
-      },
+        sum += num;
+      }
+      return sum % 10 === 0 || "Invalid ID number";
     },
-  };
-  
-  </script>
-  
-  <style scoped>
-  .v-list-item-title {
-    font-weight: bold;
-  }
-  .v-list-item-subtitle {
-    font-style: italic;
-  }
-  
-  .holiday-description {
+    async searchID() {
+      try {
+        const response = await axios.post("http://127.0.0.1:8000/api/search", {
+          idNumber: this.idNumber,
+        });
+        this.result = response.data;
+        this.error = "";
+      } catch (err) {
+        this.error = err.response?.data?.error || "An error occurred";
+      }
+    },
+    onScroll(event) {
+      const bottom = event.target.scrollHeight === event.target.scrollTop + event.target.clientHeight;
+      if (bottom && this.result.holidays.length > this.visibleCount) {
+        this.visibleCount += 5;
+      }
+    },
+  },
+};
+</script>
+
+<style scoped>
+/* Style for individual list items */
+.v-list-item-title {
+  font-weight: bold;
+}
+
+.v-list-item-subtitle {
+  font-style: italic;
+}
+
+/* Description section style */
+.holiday-description {
   white-space: nowrap; 
   overflow-x: auto; 
   text-overflow: ellipsis; 
-  max-width: 100%; 
+  max-width: 200%; 
 }
-  
-  .holiday-list-container {
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  
-  /* frosted ice effect */
-  .frosted-card {
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px); 
-    border-radius: 16px; 
-    border: 1px solid rgba(255, 255, 255, 0.5); 
-  }
-  
-  .frosted-card .v-card-title, 
-  .frosted-card .v-btn, 
-  .frosted-card .v-alert {
-    color: white; 
-  }
-  </style>
-  
+
+/* Container for both horizontal and vertical scroll */
+.holiday-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.no-holidays-message {
+  text-align: center;
+  color: #f44336; /* Red color for error */
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.frosted-card {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px); 
+  border-radius: 16px; 
+  border: 1px solid rgba(255, 255, 255, 0.5); 
+}
+
+.frosted-card .v-card-title, 
+.frosted-card .v-btn, 
+.frosted-card .v-alert {
+  color: white; 
+}
+</style>
