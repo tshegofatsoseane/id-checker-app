@@ -84,9 +84,11 @@ def search_id(request):
             raise ValueError(f"Failed to fetch holidays: {response.status_code}")
             
         holidays = response.json().get('response', {}).get('holidays', [])
-        matching_holidays = [
-             holiday for holiday in holidays if holiday['date']['iso'] == str(record.date_of_birth)
-        ]
+        matching_holidays = []
+        for holiday in holidays:
+            if holiday['date']['iso'] == str(record.date_of_birth.month): 
+                matching_holidays.append(holiday) 
+
 
         # store holidays in database
         for holiday in matching_holidays:

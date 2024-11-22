@@ -1,5 +1,5 @@
 <template>
-  <v-container class="pa-5">
+  <v-container class="pa-5 page-container">
     <v-card class="pa-5 frosted-card">
       <v-card-title class="text-h5 font-weight-bold">SA ID Checker</v-card-title>
 
@@ -36,43 +36,55 @@
                 <p><strong>Search Count:</strong> {{ result.searchCount }}</p>
               </v-col>
             </v-row>
-            <v-divider class="my-4"></v-divider> 
+            <v-divider class="my-4"></v-divider>
             <h4 class="text-h6 font-weight-bold">Holidays:</h4>
 
-            <!-- If no holidays, show a message -->
-            <div v-if="!result.holidays || result.holidays.length === 0" class="no-holidays-message">
-              <p>No holidays found for the given date of birth.</p>
-            </div>
+            <div class="holiday-list-container" @scroll="onScroll">
+              <template v-if="result.holidays.length > 0">
+                <!-- holiday list -->
+                <v-row>
+                  <v-col
+                    v-for="(holiday, index) in visibleHolidays"
+                    :key="index"
+                    cols="12"
+                  >
+                    <v-card class="holiday-card">
+                      <v-card-title>
+                        <v-icon color="blue lighten-2" class="mr-3">mdi-calendar</v-icon>
+                        <strong>{{ holiday.holiday_name }}</strong>
+                      </v-card-title>
+                      <v-card-subtitle class="holiday-details">
+                        <p>
+                          <v-icon color="primary" small>mdi-calendar-range</v-icon>
+                          <strong>Date:</strong> {{ holiday.holiday_date }}
+                        </p>
+                        <p>
+                          <v-icon color="green lighten-2" small>mdi-tag</v-icon>
+                          <strong>Type:</strong> {{ holiday.holiday_type }}
+                        </p>
+                        <p>
+                          <v-icon color="orange lighten-2" small>mdi-information</v-icon>
+                          <strong>Description:</strong> {{ holiday.description }}
+                        </p>
+                      </v-card-subtitle>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </template>
 
-            <!-- scrollable div for holidays -->
-            <div class="holiday-list-container" v-else @scroll="onScroll">
-              <!-- holidays list -->
-              <v-list dense>
-                <v-list-item
-                  v-for="(holiday) in visibleHolidays"
-                  :key="holiday.holiday_name"
-                >
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      <strong>{{ holiday.holiday_name }}</strong>
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      <strong>Date:</strong> {{ holiday.holiday_date }}
-                    </v-list-item-subtitle>
-                    <v-list-item-subtitle>
-                      <strong>Type:</strong> {{ holiday.holiday_type }}
-                    </v-list-item-subtitle>
-                    <v-list-item-subtitle class="holiday-description">
-                      <strong>Description:</strong> {{ holiday.description }}
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
+              <!-- error message if holiday isnt found-->
+              <template v-else>
+                <v-alert type="info" class="mt-3" dense outlined>
+                  No holidays found for this date of birth.
+                </v-alert>
+              </template>
             </div>
           </v-card-text>
         </v-card>
       </v-card-text>
     </v-card>
+    <br />
+    <br />
   </v-container>
 </template>
 
@@ -84,7 +96,7 @@ export default {
       idNumber: "",
       result: null,
       error: "",
-      visibleCount: 5, 
+      visibleCount: 5,
     };
   },
   computed: {
@@ -114,6 +126,7 @@ export default {
         const response = await axios.post("http://127.0.0.1:8000/api/search", {
           idNumber: this.idNumber,
         });
+        console.log(response.data);
         this.result = response.data;
         this.error = "";
       } catch (err) {
@@ -131,46 +144,44 @@ export default {
 </script>
 
 <style scoped>
-/* Style for individual list items */
-.v-list-item-title {
-  font-weight: bold;
-}
-
-.v-list-item-subtitle {
-  font-style: italic;
-}
-
-/* Description section style */
-.holiday-description {
-  white-space: nowrap; 
-  overflow-x: auto; 
-  text-overflow: ellipsis; 
-  max-width: 200%; 
-}
-
-/* Container for both horizontal and vertical scroll */
 .holiday-list-container {
   max-height: 400px;
-  overflow-y: auto;
+  overflow-y: scroll;
+  padding-right: 10px;
 }
 
-.no-holidays-message {
-  text-align: center;
-  color: #f44336; /* Red color for error */
-  font-size: 16px;
-  font-weight: bold;
+.page-container {
+  max-height: 100vh;
+  overflow-y: scroll;
 }
 
 .frosted-card {
   background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px); 
-  border-radius: 16px; 
-  border: 1px solid rgba(255, 255, 255, 0.5); 
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.frosted-card .v-card-title, 
-.frosted-card .v-btn, 
-.frosted-card .v-alert {
-  color: white; 
+.holiday-card {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
+  height: 200px;
+}
+
+.holiday-card .v-card-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.holiday-details p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
 }
 </style>
