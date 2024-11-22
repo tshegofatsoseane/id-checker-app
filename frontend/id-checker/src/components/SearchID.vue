@@ -39,40 +39,44 @@
             <v-divider class="my-4"></v-divider>
             <h4 class="text-h6 font-weight-bold">Holidays:</h4>
 
+            <!-- Conditional Rendering for Holidays -->
             <div class="holiday-list-container" @scroll="onScroll">
               <template v-if="result.holidays.length > 0">
-                <!-- holiday list -->
+                <!-- modern holiday list -->
                 <v-row>
                   <v-col
                     v-for="(holiday, index) in visibleHolidays"
                     :key="index"
                     cols="12"
                   >
-                    <v-card class="holiday-card">
-                      <v-card-title>
-                        <v-icon color="blue lighten-2" class="mr-3">mdi-calendar</v-icon>
-                        <strong>{{ holiday.holiday_name }}</strong>
-                      </v-card-title>
-                      <v-card-subtitle class="holiday-details">
-                        <p>
-                          <v-icon color="primary" small>mdi-calendar-range</v-icon>
-                          <strong>Date:</strong> {{ holiday.holiday_date }}
-                        </p>
-                        <p>
-                          <v-icon color="green lighten-2" small>mdi-tag</v-icon>
-                          <strong>Type:</strong> {{ holiday.holiday_type }}
-                        </p>
-                        <p>
-                          <v-icon color="orange lighten-2" small>mdi-information</v-icon>
-                          <strong>Description:</strong> {{ holiday.description }}
-                        </p>
-                      </v-card-subtitle>
-                    </v-card>
+                  <v-card class="holiday-card">
+                    <v-card-title>
+                      <v-icon color="blue lighten-2" class="mr-3">mdi-calendar</v-icon>
+                      <strong>{{ holiday.holiday_name }}</strong>
+                    </v-card-title>
+                    <v-card-subtitle class="holiday-details">
+                      <p>
+                        <v-icon color="primary" small>mdi-calendar-range</v-icon>
+                        <strong>Date:</strong> {{ holiday.holiday_date }}
+                      </p>
+                      <p>
+                        <v-icon color="green lighten-2" small>mdi-tag</v-icon>
+                        <strong>Type:</strong> {{ holiday.holiday_type }}
+                      </p>
+                      <hr>
+                      <p class="holiday-description">
+                        <strong>Description:</strong> <br>
+                      </p>
+                      
+                      <p class="holiday-description">{{ holiday.description }}</p>
+                    </v-card-subtitle>
+                  </v-card>
+
                   </v-col>
                 </v-row>
               </template>
 
-              <!-- error message if holiday isnt found-->
+              <!-- no holidays message -->
               <template v-else>
                 <v-alert type="info" class="mt-3" dense outlined>
                   No holidays found for this date of birth.
@@ -87,6 +91,8 @@
     <br />
   </v-container>
 </template>
+
+
 
 <script>
 import axios from "axios";
@@ -150,6 +156,13 @@ export default {
   padding-right: 10px;
 }
 
+.holiday-description {
+  line-height: 1.4;
+  color: #444;
+  white-space: normal; 
+  word-break: break-word; 
+}
+
 .page-container {
   max-height: 100vh;
   overflow-y: scroll;
@@ -178,10 +191,23 @@ export default {
 }
 
 .holiday-details p {
-  margin: 5px 0;
-  font-size: 0.9rem;
-  color: #555;
+  margin: 0;
+  padding: 0; 
   display: flex;
+  align-items: center; 
+  font-size: 0.95rem;
+  color: #555;
   align-items: center;
 }
+
+.holiday-details {
+  display: flex;
+  flex-direction: column; 
+  gap: 5px;
+}
+
+.holiday-details v-icon {
+  margin-right: 8px;
+}
+
 </style>
