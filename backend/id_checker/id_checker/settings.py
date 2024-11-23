@@ -94,11 +94,11 @@ WSGI_APPLICATION = "id_checker.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        'NAME': 'id_db',
-        'USER': 'root',
-        'PASSWORD': '98Naturena!!',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": config("DB_PORT"),
     }
 }
 
