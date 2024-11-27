@@ -24,4 +24,4 @@ Ensure the following are installed on your system:
 
 3. Install dependencies:
    ```bash
-     pip install -r requirements.txt
+   pip install -r requirements.txt
