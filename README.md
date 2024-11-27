@@ -25,3 +25,8 @@ Ensure the following are installed on your system:
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
+
+4. Run server
+   ```bash
+   cd id_checker
+   python manage.py runserver   
