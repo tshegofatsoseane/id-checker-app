@@ -13,6 +13,7 @@ Ensure the following are installed on your system:
 - MySQL
 - Virtualenv
 
+
 ### Steps to Start the Backend Server
 
 1. **Clone the repository** and navigate to the `backend` directory:
@@ -31,4 +32,17 @@ Ensure the following are installed on your system:
 4. Run server
    ```bash
    cd id_checker
-   python manage.py runserver   
+   python manage.py runserver
+
+
+### Steps to Start the frontend Server
+
+1. navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+
+2. navigate into the `id-checker` directory and run the server
+   ``` bash
+   cd id-checker
+   npm run serve
+
